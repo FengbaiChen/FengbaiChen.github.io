@@ -20,7 +20,7 @@ line-height: 20px;
 text-rendering: optimizelegibility;}
 
 .span4 {
-  /* position: absolute; */
+  position: absolute;
   float: left;
   width: 250px;
   height: 100vh;
