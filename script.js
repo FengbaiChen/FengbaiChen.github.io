@@ -162,8 +162,8 @@ function applyGreenLeather(textures) {
     roughnessMap: textures.roughnessMap,
     metalnessMap: textures.metalnessMap,
     aoMap:        textures.aoMap,
-    metalness:    0.0,
-    roughness:    1.0,
+    metalness:    0.4,
+    roughness:    0.4,
     side:         THREE.DoubleSide
   });
 
