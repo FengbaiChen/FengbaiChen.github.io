@@ -224,7 +224,7 @@ function addLight() {
   fill.position.set(-5, 5, -5);
   fill.castShadow = false;
   scene.add(fill);
-  renderer.toneMappingExposure = 3.0;
+  renderer.toneMappingExposure = 6.0;
 
 }
 
