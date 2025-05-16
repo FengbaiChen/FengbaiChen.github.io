@@ -205,6 +205,15 @@ function addLight() {
   spot.position.set(5, 5, 7);
   spot.castShadow = true;
   scene.add(spot);
+    // 半球光
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.9);
+  hemi.position.set(0, 20, 0);
+  scene.add(hemi);
+
+  // 背面补光
+  const backLight = new THREE.DirectionalLight(0xffffff, 0.4);
+  backLight.position.set(0, 5, -10);
+  scene.add(backLight);
 
   const ambient = new THREE.AmbientLight(0xffffff);
   scene.add(ambient);
@@ -215,7 +224,7 @@ function addLight() {
   fill.position.set(-5, 5, -5);
   fill.castShadow = false;
   scene.add(fill);
-  renderer.toneMappingExposure = 1.2;
+  renderer.toneMappingExposure = 3.0;
 
 }
 
