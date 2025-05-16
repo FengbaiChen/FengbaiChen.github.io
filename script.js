@@ -1,8 +1,10 @@
 // script.js
 
+// —————————————————————————————————————————————————
 // 全局变量
 var scene, camera, renderer, controls, activeModel;
 const MODEL_PATH = 'model/bag.gltf';
+
 
 // 颜色数组
 const colors = [
@@ -19,13 +21,15 @@ const MATERIALS = [
     label: 'Green Leather',
     path: 'assets/materials/green-leather/PBR'
   }
-  // 将来可继续添加更多 PBR 材质
 ];
 
+// —————————————————————————————————————————————————
 // 入口：构建面板、初始化场景并启动动画
-addMaterialPalette();
-main();
-animate();
+window.addEventListener('DOMContentLoaded', () => {
+  addMaterialPalette();
+  main();
+  animate();
+});
 
 // —————————————————————————————————————————————————
 // 1. 合并面板：Flat Colors + PBR
@@ -60,7 +64,8 @@ function addMaterialPalette() {
     if (li.classList.contains('flat-item')) {
       const colorHex = li.id;
       const mat = new THREE.MeshStandardMaterial({
-        color: parseInt('0x' + colorHex)
+        color: parseInt('0x' + colorHex),
+        side: THREE.DoubleSide   // ← 双面渲染
       });
       changeMaterial(activeModel, mat);
     }
@@ -111,21 +116,24 @@ function main() {
 }
 
 // —————————————————————————————————————————————————
-// 3. 加载并切换模型（如有多个模型可扩展）
-document.querySelector('#models').addEventListener('click', e => {
-  const id = e.target.id || e.target.parentElement.id;
-  MODELS.forEach(mod => {
-    if (id === mod.name) {
-      removeAllObjects();
-      addLight();
-      addFloor();
-      addModel(mod.path);
-    }
+// 3. 切换模型（如有多个）
+const modelSection = document.querySelector('#models');
+if (modelSection) {
+  modelSection.addEventListener('click', e => {
+    const id = e.target.id || e.target.parentElement.id;
+    MODELS.forEach(mod => {
+      if (id === mod.name) {
+        removeAllObjects();
+        addLight();
+        addFloor();
+        addModel(mod.path);
+      }
+    });
   });
-});
+}
 
 // —————————————————————————————————————————————————
-// 4. PBR 贴图加载器（一次性并行加载所有贴图）
+// 4. PBR 贴图加载器
 function loadPBRTextures(path, onLoaded) {
   const loader = new THREE.TextureLoader();
   const files = [
@@ -154,7 +162,8 @@ function loadPBRTextures(path, onLoaded) {
   });
 }
 
-// 应用 Green Leather PBR 材质
+// —————————————————————————————————————————————————
+// 5. 应用 Green Leather PBR 材质
 function applyGreenLeather(textures) {
   const mat = new THREE.MeshStandardMaterial({
     map:          textures.map,
@@ -162,9 +171,9 @@ function applyGreenLeather(textures) {
     roughnessMap: textures.roughnessMap,
     metalnessMap: textures.metalnessMap,
     aoMap:        textures.aoMap,
-    metalness:    0.4,
+    metalness:    0.2,
     roughness:    0.4,
-    side:         THREE.DoubleSide
+    side:         THREE.DoubleSide  // ← 双面渲染
   });
 
   activeModel.traverse(o => {
@@ -179,18 +188,23 @@ function applyGreenLeather(textures) {
 }
 
 // —————————————————————————————————————————————————
-// 5. 通用纯色材质替换
+// 6. 平面纯色材质替换
 function changeMaterial(root, mat) {
   root.traverse(o => {
-    if (o.isMesh) o.material = mat;
+    if (o.isMesh) {
+      o.material = mat;
+    }
   });
 }
 
 // —————————————————————————————————————————————————
-// 6. 地面
+// 7. 地面
 function addFloor() {
   const geo = new THREE.PlaneGeometry(5000, 5000);
-  const mat = new THREE.MeshPhongMaterial({ color: 0xeeeeee, shininess: 0 });
+  const mat = new THREE.MeshPhongMaterial({
+    color: 0xeeeeee,
+    shininess: 0
+  });
   const floor = new THREE.Mesh(geo, mat);
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
@@ -199,57 +213,69 @@ function addFloor() {
 }
 
 // —————————————————————————————————————————————————
-// 7. 灯光
+// 8. 灯光
 function addLight() {
-  const spot = new THREE.SpotLight(0xffffff, 15, 100, 0.6, 1.5, 0.6);
-  spot.position.set(5, 5, 7);
-  spot.castShadow = true;
-  scene.add(spot);
-    // 半球光
+  // 增强环境光
+  scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+
+  // 半球光
   const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.9);
   hemi.position.set(0, 20, 0);
   scene.add(hemi);
+
+  // 四面主光（保留原来）
+  [
+    [ 10, 10, 10, 1.2],
+    [-10, 10, 10, 1.0],
+    [ 10, 10,-10, 1.0],
+    [-10, 10,-10, 0.8]
+  ].forEach(cfg => {
+    const light = new THREE.DirectionalLight(0xffffff, cfg[3]);
+    light.position.set(cfg[0], cfg[1], cfg[2]);
+    light.castShadow = true;
+    scene.add(light);
+  });
+
+  // 顶部补光
+  const top = new THREE.SpotLight(0xffffff, 0.5, 100, Math.PI/4);
+  top.position.set(0, 20, 0);
+  top.castShadow = true;
+  scene.add(top);
 
   // 背面补光
   const backLight = new THREE.DirectionalLight(0xffffff, 0.4);
   backLight.position.set(0, 5, -10);
   scene.add(backLight);
 
-  const ambient = new THREE.AmbientLight(0xffffff);
-  scene.add(ambient);
-  const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
-// 参数依次：天空色、地面色、强度
-  scene.add(hemi);
-  const fill = new THREE.DirectionalLight(0xffffff, 0.5);
-  fill.position.set(-5, 5, -5);
-  fill.castShadow = false;
-  scene.add(fill);
-  renderer.toneMappingExposure = 6.0;
-
+  //（可选）调整曝光
+  renderer.toneMappingExposure = 5.0;
 }
-
 // —————————————————————————————————————————————————
-// 8. 加载 GLTF 模型
+// 9. 加载 GLTF 模型
 function addModel(modelPath) {
   const loader = new THREE.GLTFLoader();
-  loader.load(modelPath, gltf => {
-    const model = gltf.scene;
-    model.rotation.y = Math.PI;
-    activeModel = model;
-    model.scale.set(5, 5, 5);
-    model.position.set(0, -1, 0);
-    model.traverse(o => {
-      if (o.isMesh) {
-        o.castShadow = true;
-        o.receiveShadow = true;
-      }
-    });
-    scene.add(model);
-  }, undefined, err => console.error(err));
+  loader.load(modelPath,
+    gltf => {
+      const model = gltf.scene;
+      model.rotation.y = Math.PI;
+      activeModel = model;
+      model.scale.set(5, 5, 5);
+      model.position.set(0, -1, 0);
+      model.traverse(o => {
+        if (o.isMesh) {
+          o.castShadow = true;
+          o.receiveShadow = true;
+        }
+      });
+      scene.add(model);
+    },
+    undefined,
+    err => console.error(err)
+  );
 }
 
 // —————————————————————————————————————————————————
-// 9. 渲染循环
+// 10. 渲染循环
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
@@ -257,7 +283,7 @@ function animate() {
 }
 
 // —————————————————————————————————————————————————
-// 10. 清除场景（切模型时用）
+// 11. 清除场景（切模型时用）
 function removeAllObjects() {
   while (scene.children.length) {
     scene.remove(scene.children[0]);
