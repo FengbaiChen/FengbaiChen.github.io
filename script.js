@@ -83,7 +83,9 @@ function initScene() {
   renderer.shadowMap.enabled = true;
   document.body.appendChild(renderer.domElement);
 
+  
   controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableZoom = false;
   controls.maxPolarAngle = Math.PI / 2;
   controls.minPolarAngle = Math.PI / 3;
   controls.enableDamping = true;
@@ -139,26 +141,34 @@ function addModel(path) {
     gltf => {
       const model = gltf.scene;
 
-      // —— 核心：在这里重建法线并关闭 flatShading ——  
       model.traverse(o => {
         if (o.isMesh) {
-          // 1. 强制重建顶点法线，生成平滑过渡
+          // —— 1. 重建顶点法线以获取平滑过渡 —— 
+          o.geometry.deleteAttribute('normal');
           o.geometry.computeVertexNormals();
-          // 2. 关闭平面着色，启用平滑着色
-          if (o.material) {
-            o.material.flatShading = false;
-            o.material.needsUpdate = true;
+
+          // —— 2. 彻底关闭所有法线／凹凸贴图 —— 
+          const mat = o.material;
+          if (mat) {
+            mat.normalMap       = null;
+            mat.bumpMap         = null;
+            mat.displacementMap = null;
+            // 如果还有法线强度参数，也清零
+            if (mat.normalScale) mat.normalScale.set(0, 0);
+            mat.flatShading     = false;  // 保证 smooth shading
+            mat.needsUpdate     = true;
           }
-          // 3. 保持阴影开关
-          o.castShadow   = true;
+
+          o.castShadow    = true;
           o.receiveShadow = true;
         }
       });
-      // —————————————————————————————
 
+      // 保持你原来的 transform
       model.rotation.y = Math.PI;
-      model.scale.set(5, 5, 5);
-      model.position.set(0, -1, 0);
+      model.scale.set(10, 10, 10);
+      model.position.set(0, -1.3, 0);
+
       activeModel = model;
       scene.add(model);
     },
