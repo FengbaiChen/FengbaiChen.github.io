@@ -4,8 +4,8 @@ let scene, camera, renderer, controls, activeModel;
 
 // 可选模型列表（name 对应 li 的 id）
 const MODELS = [
-  { name: 'bag1',   label: 'Bag',   path: 'model/bag.glb' },
-  { name: 'bag2',  label: 'bag2',  path: 'model/bag2.glb' }
+  { name: 'bag1',  label: 'Bag',   path: 'model/bag.glb',  thumb: 'images/bag1.jpg' },
+  { name: 'bag2',  label: 'Bag 2', path: 'model/bag2.glb', thumb: 'images/bag2.jpg' }
 ];
 
 // 入口：构建 Model 切换面板，初始化场景并启动动画
@@ -22,7 +22,21 @@ function addModelSwitcher() {
     const li = document.createElement('li');
     li.classList.add('todo-wrap', 'model-item');
     li.id = m.name;
-    li.innerHTML = `<div class="todo-content">${m.label}</div>`;
+
+    // —— 关键：把 thumb 当背景图设置上去 —— 
+    li.style.backgroundImage    = `url(${m.thumb})`;
+    li.style.backgroundSize     = 'cover';
+    li.style.backgroundPosition = 'center';
+    li.style.borderRadius       = '4px';
+    li.style.overflow           = 'hidden';
+
+    // 文字加一个半透明底，保证可读
+    li.innerHTML = `
+      <div class="todo-content">
+        ${m.label}
+      </div>
+    `;
+
     container.appendChild(li);
   });
 
@@ -33,7 +47,6 @@ function addModelSwitcher() {
     if (def) {
       removeAllObjects();
       addLight();
-      addFloor();
       addModel(def.path);
     }
   });
@@ -41,15 +54,26 @@ function addModelSwitcher() {
 
 // 初始化 Three.js 场景
 function initScene() {
+  // 1. 新建场景
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xf1f1f1);
+
+  // 2. 用背景图替换纯色背景
+  new THREE.TextureLoader().load('images/bg.jpg', texture => {
+    scene.background = texture;
+  });
+  // 如果你还想保留原来的纯色，改成下面这样即可：
+  // scene.background = new THREE.Color(0xf1f1f1);
+  // scene.backgroundBlending = THREE.MixOperation; // 可选
+
+  // 3. 保留你的雾化设置
   scene.fog = new THREE.Fog(0xf1f1f1, 20, 100);
 
+  // 4. 相机、渲染器、控件……
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
   camera.position.set(0, 0, -3);
   camera.rotation.set(1.0, 0, 0);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer = new THREE.WebGLRenderer({ antialias: true, dithering: true });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.physicallyCorrectLights = true;
@@ -65,11 +89,11 @@ function initScene() {
   controls.enableDamping = true;
   controls.dampingFactor = 0.1;
 
-  // 初始加载第一个模型 (.glf)
+  // 5. 初始光源、地面、模型
   addLight();
-  addFloor();
   addModel(MODELS[0].path);
 }
+
 
 // 添加地面
 function addFloor() {
