@@ -4,10 +4,19 @@ let scene, camera, renderer, controls, activeModel;
 
 // 可选模型列表（name 对应 li 的 id）
 const MODELS = [
-  { name: 'bag1',  label: 'Bag',   path: 'model/bag.glb',  thumb: 'images/bag1.jpg' },
-  { name: 'bag2',  label: 'Bag 2', path: 'model/bag2.glb', thumb: 'images/bag2.jpg' }
+  // 原来示例里可能有的几个包（如果不需要可以删掉）
+  { name: 'bag1',  label: 'Water Lilies',                                 path: 'model/bag.glb',                                    thumb: 'images/bag1.jpg' },
+  // —— 从这里开始，依次把你截图里列出的美术作品添加进来 —— 
+  { name: 'a_sunday_afternoon',         label: 'A Sunday Afternoon on the Island of La Grande Jatte',  path: 'model/A Sunday Afternoon on the Island of La Grande Jatte.glb',         thumb: 'images/A_Sunday_Afternoon_on_the_Island_of_La_Grande_Jatte.jpg' },
+  { name: 'composition_red_blue_yellow', label: 'Composition with Red, Blue and Yellow',               path: 'model/Composition with Red, Blue and Yellow.glb',                       thumb: 'images/Composition_with_Red,_Blue_and_Yellow.jpg' },
+  { name: 'guernica',                    label: 'Guernica',                                                path: 'model/Guernica.glb',                                                thumb: 'images/Guernica.jpg' },
+  { name: 'la_danse',                    label: 'La Danse',                                                path: 'model/La Danse.glb',                                                thumb: 'images/La_Danse.jpg' },
+  { name: 'las_dos_fridas',             label: 'Las dos Fridas',                                          path: 'model/Las dos Fridas.glb',                                           thumb: 'images/Las_dos_Fridas.jpg' },
+  { name: 'mona_lisa',                   label: 'Mona Lisa',                                               path: 'model/Mona Lisa.glb',                                               thumb: 'images/Mona_Lisa.jpg' },
+  { name: 'portrait_adele_bloch_bauer',  label: 'Portrait of Adele Bloch-Bauer',                           path: 'model/Portrait of Adele Bloch-Bauer.glb',                           thumb: 'images/Portrait_of_Adele_Bloch-Bauer.jpg' },
+  { name: 'the_great_wave',              label: 'The Great Wave off Kanagawa',                             path: 'model/The Great Wave off Kanagawa.glb',                             thumb: 'images/The_Great_Wave_off_Kanagawa.jpg' },
+  { name: 'the_persistence_of_memory',   label: 'The Persistence of Memory',                               path: 'model/The Persistence of Memory.glb',                               thumb: 'images/The_Persistence_of_Memory.jpg' },
 ];
-
 // 入口：构建 Model 切换面板，初始化场景并启动动画
 window.addEventListener('DOMContentLoaded', () => {
   addModelSwitcher();
@@ -24,15 +33,17 @@ function addModelSwitcher() {
     li.id = m.name;
 
     // —— 关键：把 thumb 当背景图设置上去 —— 
-    li.style.backgroundImage    = `url(${m.thumb})`;
-    li.style.backgroundSize     = 'cover';
-    li.style.backgroundPosition = 'center';
-    li.style.borderRadius       = '4px';
-    li.style.overflow           = 'hidden';
+    if (m.thumb) {
+      li.style.backgroundImage    = `url(${m.thumb})`;
+      li.style.backgroundSize     = 'cover';
+      li.style.backgroundPosition = 'center';
+      li.style.borderRadius       = '4px';
+      li.style.overflow           = 'hidden';
+    }
 
     // 文字加一个半透明底，保证可读
     li.innerHTML = `
-      <div class="todo-content">
+      <div class="todo-content" style="background: rgba(0,0,0,0.4); padding: 4px;">
         ${m.label}
       </div>
     `;
@@ -83,7 +94,6 @@ function initScene() {
   renderer.shadowMap.enabled = true;
   document.body.appendChild(renderer.domElement);
 
-  
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableZoom = false;
   controls.maxPolarAngle = Math.PI / 2;
@@ -93,9 +103,9 @@ function initScene() {
 
   // 5. 初始光源、地面、模型
   addLight();
+  // 默认先加载 MODELS[0]
   addModel(MODELS[0].path);
 }
-
 
 // 添加地面
 function addFloor() {
